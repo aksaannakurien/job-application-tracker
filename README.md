@@ -83,3 +83,35 @@ Search and filter are supported through query parameters, for example:
 
 ## Database
 MongoDB Atlas stores application records and status history.
+
+## Verification
+
+- Backend API tested at `http://localhost:5000/`.
+- Application listing endpoint tested at `/api/applications`.
+- Frontend production build verified using `npm run build`.
+- Status transition validation tested, including rejection of an invalid transition.
+
+## Test Commands
+
+Run these commands from the project root in separate terminals.
+
+Backend:
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Frontend:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Production build:
+```bash
+cd frontend
+npm run build
+```
+
