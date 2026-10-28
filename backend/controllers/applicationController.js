@@ -1,5 +1,5 @@
-
-const Application = require("../models/Application");
+﻿
+const Application = require("../models/application");
 
 const FINAL_STATUSES = ["Rejected", "Accepted", "Declined"];
 const ACTIVE_STATUSES = ["Applied", "Interview", "Offer"];
@@ -358,3 +358,4 @@ exports.getStats = async (req, res) => {
     return send(res, 400, false, error.message);
   }
 };
+
