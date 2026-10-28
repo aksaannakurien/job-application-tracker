@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
 
-const API = "http://localhost:5000/api/applications";
+const API = "/api/applications";
 
 const STATUSES = [
   "Applied",
