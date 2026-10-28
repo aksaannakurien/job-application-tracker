@@ -13,20 +13,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/applications", require("./routes/applicationRoutes"));
-
-app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "Job Application Tracker API is running",
-    data: null
-  });
-});
-
 let connectionPromise;
 
 async function connectDatabase() {
   if (mongoose.connection.readyState === 1) return;
+
+  if (!process.env.MONGO_URI) {
+    throw new Error("MONGO_URI is not configured");
+  }
+
   if (!connectionPromise) {
     connectionPromise = mongoose.connect(process.env.MONGO_URI)
       .catch(error => {
@@ -34,6 +29,7 @@ async function connectDatabase() {
         throw error;
       });
   }
+
   await connectionPromise;
 }
 
@@ -51,10 +47,18 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Vercel uses the exported Express app.
+app.use("/api/applications", require("./routes/applicationRoutes"));
+
+app.get("/", (req, res) => {
+  res.json({
+    success: true,
+    message: "Job Application Tracker API is running",
+    data: null
+  });
+});
+
 module.exports = app;
 
-// Local development still starts a server.
 if (require.main === module) {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
