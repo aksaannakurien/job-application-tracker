@@ -2,7 +2,12 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config();
+const path = require("path");
+
+require("dotenv").config({ path: path.join(__dirname, ".env.local") });
+if (!process.env.MONGO_URI) {
+  require("dotenv").config({ path: path.join(__dirname, ".env") });
+}
 
 const app = express();
 
