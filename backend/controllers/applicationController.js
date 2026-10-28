@@ -13,7 +13,10 @@ const TRANSITIONS = {
 const send = (res, status, success, message, data = null) =>
   res.status(status).json({ success, message, data });
 
-// Generate the application ID on the backend
+const escapeRegex = (value) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Generate a unique application ID for each company
 const makeId = async (companyName) => {
   const prefix = companyName
     .replace(/[^a-zA-Z]/g, "")
@@ -25,6 +28,10 @@ const makeId = async (companyName) => {
   }
 
   const existing = await Application.find({
+    companyName: {
+      $regex: `^${escapeRegex(companyName.trim())}$`,
+      $options: "i"
+    },
     applicationId: { $regex: `^JA-${prefix}-\\d{3}$` }
   }).select("applicationId");
 
@@ -51,7 +58,7 @@ const isPastOrToday = (date) => {
   return !Number.isNaN(d.getTime()) && d <= today;
 };
 
-// GET all applications with backend search and filtering
+// GET all applications with search and filtering
 exports.getApplications = async (req, res) => {
   try {
     const filter = {};
@@ -62,7 +69,7 @@ exports.getApplications = async (req, res) => {
 
     if (req.query.company) {
       filter.companyName = {
-        $regex: req.query.company,
+        $regex: escapeRegex(req.query.company),
         $options: "i"
       };
     }
@@ -70,19 +77,13 @@ exports.getApplications = async (req, res) => {
     const applications = await Application.find(filter)
       .sort({ createdAt: -1 });
 
-    return send(
-      res,
-      200,
-      true,
-      "Applications retrieved",
-      applications
-    );
+    return send(res, 200, true, "Applications retrieved", applications);
   } catch (error) {
     return send(res, 400, false, error.message);
   }
 };
 
-// GET one application by MongoDB ID
+// GET one application
 exports.getApplication = async (req, res) => {
   try {
     const application = await Application.findById(req.params.id);
@@ -91,19 +92,13 @@ exports.getApplication = async (req, res) => {
       return send(res, 404, false, "Application not found");
     }
 
-    return send(
-      res,
-      200,
-      true,
-      "Application retrieved",
-      application
-    );
+    return send(res, 200, true, "Application retrieved", application);
   } catch {
     return send(res, 400, false, "Invalid application ID");
   }
 };
 
-// POST create a new application
+// POST create an application
 exports.createApplication = async (req, res) => {
   try {
     const {
@@ -138,10 +133,6 @@ exports.createApplication = async (req, res) => {
       );
     }
 
-    // Check duplicate active applications
-    const escapeRegex = (value) =>
-      value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
     const duplicate = await Application.findOne({
       companyName: {
         $regex: `^${escapeRegex(companyName.trim())}$`,
@@ -163,7 +154,7 @@ exports.createApplication = async (req, res) => {
       );
     }
 
-    // The client cannot choose the application ID or initial status
+    // Generate ID and initial status on the backend
     const applicationId = await makeId(companyName.trim());
 
     const application = await Application.create({
@@ -198,7 +189,7 @@ exports.createApplication = async (req, res) => {
   }
 };
 
-// PUT edit an application
+// PUT edit permitted application fields only
 exports.updateApplication = async (req, res) => {
   try {
     const application = await Application.findById(req.params.id);
@@ -207,7 +198,6 @@ exports.updateApplication = async (req, res) => {
       return send(res, 404, false, "Application not found");
     }
 
-    // Only these fields can be edited
     const allowed = [
       "companyName",
       "jobRole",
@@ -227,19 +217,10 @@ exports.updateApplication = async (req, res) => {
         : application.jobRole;
 
     if (!nextCompany || !nextRole) {
-      return send(
-        res,
-        400,
-        false,
-        "Company and role are required"
-      );
+      return send(res, 400, false, "Company and role are required");
     }
 
-    // Prevent editing an active application into a duplicate
     if (ACTIVE_STATUSES.includes(application.status)) {
-      const escapeRegex = (value) =>
-        value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
       const duplicate = await Application.findOne({
         _id: { $ne: application._id },
         companyName: {
@@ -271,23 +252,16 @@ exports.updateApplication = async (req, res) => {
 
     await application.save();
 
-    return send(
-      res,
-      200,
-      true,
-      "Application updated",
-      application
-    );
+    return send(res, 200, true, "Application updated", application);
   } catch (error) {
     return send(res, 400, false, error.message);
   }
 };
 
-// PATCH change application status
+// PATCH update status using permitted transitions
 exports.updateStatus = async (req, res) => {
   try {
     const { status } = req.body;
-
     const application = await Application.findById(req.params.id);
 
     if (!application) {
@@ -314,19 +288,13 @@ exports.updateStatus = async (req, res) => {
 
     await application.save();
 
-    return send(
-      res,
-      200,
-      true,
-      "Status updated",
-      application
-    );
+    return send(res, 200, true, "Status updated", application);
   } catch (error) {
     return send(res, 400, false, error.message);
   }
 };
 
-// DELETE application according to the status rule
+// DELETE only Applied or final-status applications
 exports.deleteApplication = async (req, res) => {
   try {
     const application = await Application.findById(req.params.id);
@@ -348,13 +316,7 @@ exports.deleteApplication = async (req, res) => {
 
     await application.deleteOne();
 
-    return send(
-      res,
-      200,
-      true,
-      "Application deleted",
-      null
-    );
+    return send(res, 200, true, "Application deleted", null);
   } catch {
     return send(res, 400, false, "Invalid application ID");
   }
