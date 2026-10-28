@@ -72,10 +72,14 @@ Open the local URL shown by Vite, usually `http://localhost:5173`.
 Search and filter are supported through query parameters, for example:
 `/api/applications?company=ICTAK&status=Applied`
 
+
 ## Screenshots
-Save two screenshots in the `screenshots/` folder:
-- `dashboard.png`
-- `application-list.png`
+
+### Dashboard
+![Job Application Tracker Dashboard](screenshots/dashboard.png)
+
+### Application List
+![Job Application List](screenshots/application-list.png)
 
 ## Database
 MongoDB Atlas stores application records and status history.
