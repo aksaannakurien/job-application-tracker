@@ -36,10 +36,10 @@ cd backend
 npm install
 ```
 
-Create `backend/.env`:
-```env
-PORT=5000
-MONGO_URI=your_mongodb_atlas_connection_string
+Copy the sample environment file and configure the database connection:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
 Start the backend:
